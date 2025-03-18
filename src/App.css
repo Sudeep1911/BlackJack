@@ -1,0 +1,215 @@
+.App {
+  text-align: center;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background-color: green;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 100vh;
+}
+
+.game {
+  margin: 20px auto;
+  padding: 20px;
+  width: 50%;
+  max-height: 700px;
+  border: 5px solid goldenrod;
+  border-radius: 10px;
+  background-color: darkgreen;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.balance {
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.betting {
+  margin-bottom: 20px;
+}
+
+.betting input[type="range"] {
+  width: 100%;
+  height: 8px;
+  border-radius: 5px;
+  background: goldenrod;
+  outline: none;
+  transition: background 0.3s ease-in-out;
+}
+.gap {
+  height: 20px; /* Adjust the height as needed */
+}
+.betting input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border: 2px solid goldenrod;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.betting input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.blinking {
+  animation: blink 1s infinite;
+  border: 2px solid #ffcc00;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Button Container */
+.button-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Floating Notification */
+.notification {
+  position: absolute;
+  top: -30px; /* Position above the button */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ffcc00;
+  color: #222;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.betting input[type="number"] {
+  width: 100px;
+  padding: 5px;
+  font-size: 16px;
+  text-align: center;
+  border-radius: 5px;
+  border: 2px solid goldenrod;
+}
+
+.hand {
+  margin-bottom: 20px;
+}
+
+.cards {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.card {
+  width: 60px;
+  height: 90px;
+  padding: 10px;
+  border: 2px solid white;
+  border-radius: 5px;
+  background-color: white;
+  color: black;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease-in-out;
+  animation: deal 0.5s ease-in-out;
+}
+
+.card:hover {
+  transform: scale(1.1);
+}
+
+/* Hidden dealer card */
+.hidden-card {
+  background-color: goldenrod;
+  color: transparent;
+  border: 2px solid #8b5a2b;
+  text-shadow: none;
+}
+
+@keyframes deal {
+  from {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.buttons {
+  margin-top: 30px;
+}
+
+button {
+  padding: 10px 20px;
+  margin: 0 10px;
+  background-color: goldenrod;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Recommendation Box */
+.recommendation-box {
+  background-color: #222;
+  color: #fff;
+  border: 2px solid #ffcc00;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  margin-top: 15px;
+  font-size: 18px;
+  width: 25%;
+  height: max-content;
+}
+
+/* Recommendation Reasoning */
+.recommendation-box .reasoning {
+  font-size: 16px;
+  color: #ffcc00;
+  margin-top: 5px;
+}
+
+button:hover {
+  background-color: darkgoldenrod;
+  transform: scale(1.1);
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: scale(1);
+}
+
+.message {
+  font-weight: bold;
+  margin-top: 20px;
+  font-size: 18px;
+  transition: opacity 0.3s ease-in-out;
+}
