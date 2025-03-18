@@ -2,4 +2,5 @@ Flask
 flask-cors
 numpy
 pygambit
+gunicorn
 random
