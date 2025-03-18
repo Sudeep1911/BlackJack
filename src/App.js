@@ -241,17 +241,20 @@ function App() {
       const dealerSum = calculateHandValue([...dealerCard]);
       const has_ace = "A" in playerCards;
       // Send the data to the backend
-      const response = await fetch("http://localhost:5000/recommend", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          player_sum: playerSum, // Sum of player's cards (e.g., 18)
-          dealer_sum: dealerSum, // Sum of dealer's visible card (e.g., 10)
-          has_ace: has_ace,
-        }),
-      });
+      const response = await fetch(
+        "https://blackjack-r5rb.onrender.com/recommend",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            player_sum: playerSum, // Sum of player's cards (e.g., 18)
+            dealer_sum: dealerSum, // Sum of dealer's visible card (e.g., 10)
+            has_ace: has_ace,
+          }),
+        }
+      );
 
       // Parse the response
       const data = await response.json();
