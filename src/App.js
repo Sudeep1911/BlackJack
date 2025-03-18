@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./App.css";
 
 function App() {
@@ -27,14 +27,85 @@ function App() {
   } = gameState;
 
   // Initialize the game
-  useEffect(() => {
-    if (!bettingPhase) {
-      startGame();
+
+  // Draw a card from the deck
+  const drawCard = useCallback((deck) => {
+    if (deck.length === 0) return null; // Prevent empty deck errors
+    return deck.pop();
+  }, []);
+
+  // End the game
+  const endGame = useCallback((message, multiplier = 1) => {
+    setGameState((prevState) => ({
+      ...prevState,
+      gameOver: true,
+      message,
+      balance: prevState.balance + prevState.bet * multiplier,
+    }));
+  }, []);
+
+  // Calculate the value of a hand
+  const calculateHandValue = useCallback((hand) => {
+    let value = 0;
+    let aceCount = 0;
+
+    hand.forEach((card) => {
+      const rank = card.slice(0, -1); // Extract rank, ignoring suit
+      if (["J", "Q", "K"].includes(rank)) {
+        value += 10;
+      } else if (rank === "A") {
+        aceCount += 1;
+        value += 11;
+      } else {
+        value += parseInt(rank, 10);
+      }
+    });
+
+    while (value > 21 && aceCount > 0) {
+      value -= 10;
+      aceCount -= 1;
     }
-  }, [bettingPhase]);
+
+    return value;
+  }, []);
 
   // Start a new game
-  const startGame = () => {
+  const startGame = useCallback(() => {
+    // Create a deck of cards
+    const createDeck = () => {
+      const suits = ["♥", "♦", "♠", "♣"];
+      const values = [
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "J",
+        "Q",
+        "K",
+        "A",
+      ];
+      const deck = [];
+      for (let suit of suits) {
+        for (let value of values) {
+          deck.push(`${value}${suit}`);
+        }
+      }
+      return shuffleDeck(deck);
+    };
+
+    // Shuffle the deck
+    const shuffleDeck = (deck) => {
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      return deck;
+    };
     const deck = createDeck();
     const playerHand = [drawCard(deck), drawCard(deck)];
     const dealerHand = [drawCard(deck), drawCard(deck)];
@@ -46,20 +117,64 @@ function App() {
       deck,
       gameOver: false,
       message: "",
-      dealerHiddenCard: dealerHand[1], // Hide the dealer's second card
+      dealerHiddenCard: dealerHand[1],
     }));
 
-    // Check for natural Blackjack
     if (calculateHandValue(playerHand) === 21) {
       endGame("Blackjack! You win!", 1.5);
     }
-  };
+  }, [drawCard, endGame, calculateHandValue]);
+
+  useEffect(() => {
+    if (!bettingPhase) {
+      startGame();
+    }
+  }, [bettingPhase, startGame]);
+
+  const getRecommendation = useCallback(
+    async (playerHand, dealerHand) => {
+      try {
+        // Extract card values (remove suits)
+        const playerCards = playerHand.map((card) => card.slice(0, -1)); // Remove suit
+        const dealerCard = dealerHand.slice(0, -1); // Remove suit
+
+        // Calculate the sum of the player's cards
+        const playerSum = calculateHandValue(playerHand);
+        // Calculate the sum of the dealer's visible card
+        const dealerSum = calculateHandValue([...dealerCard]);
+        const has_ace = "A" in playerCards;
+        // Send the data to the backend
+        const response = await fetch(
+          "https://blackjack-r5rb.onrender.com/recommend",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              player_sum: playerSum, // Sum of player's cards (e.g., 18)
+              dealer_sum: dealerSum, // Sum of dealer's visible card (e.g., 10)
+              has_ace: has_ace,
+            }),
+          }
+        );
+
+        // Parse the response
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("Error fetching recommendation:", error);
+        return null;
+      }
+    },
+    [calculateHandValue]
+  );
 
   useEffect(() => {
     async function fetchRecommendation() {
       if (playerHand.length >= 2 && !gameOver) {
         try {
-          const response = await getRecommendation(playerHand);
+          const response = await getRecommendation(playerHand, dealerHand);
           setRecommendation(response); // Store the recommendation in state
         } catch (error) {
           console.error("Error fetching recommendation:", error);
@@ -67,68 +182,7 @@ function App() {
       }
     }
     fetchRecommendation();
-  }, [playerHand]);
-
-  // Create a deck of cards
-  const createDeck = () => {
-    const suits = ["♥", "♦", "♠", "♣"];
-    const values = [
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      "10",
-      "J",
-      "Q",
-      "K",
-      "A",
-    ];
-    const deck = [];
-    for (let suit of suits) {
-      for (let value of values) {
-        deck.push(`${value}${suit}`);
-      }
-    }
-    return shuffleDeck(deck);
-  };
-
-  // Shuffle the deck
-  const shuffleDeck = (deck) => {
-    for (let i = deck.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [deck[i], deck[j]] = [deck[j], deck[i]];
-    }
-    return deck;
-  };
-
-  // Draw a card from the deck
-  const drawCard = (deck) => {
-    return deck.pop();
-  };
-
-  // Calculate the value of a hand
-  const calculateHandValue = (hand) => {
-    let value = hand
-      .map((card) => {
-        const cardValue = card.slice(0, -1); // Remove suit
-        if (cardValue === "A") return 11;
-        if (["K", "Q", "J"].includes(cardValue)) return 10;
-        return parseInt(cardValue, 10);
-      })
-      .reduce((sum, val) => sum + val, 0);
-    // Adjust for aces if value exceeds 21
-    let aces = hand.filter((card) => card.slice(0, -1) === "A").length;
-    while (value > 21 && aces > 0) {
-      value -= 10;
-      aces--;
-    }
-
-    return value;
-  };
+  }, [playerHand, dealerHand, gameOver, getRecommendation]);
 
   // Player chooses to hit
   const handleHit = async () => {
@@ -189,17 +243,6 @@ function App() {
     }
   };
 
-  // End the game
-  const endGame = (message, multiplier) => {
-    const newBalance = balance + bet * multiplier;
-    setGameState((prevState) => ({
-      ...prevState,
-      gameOver: true,
-      message,
-      balance: newBalance,
-    }));
-  };
-
   // Handle bet placement
   const placeBet = (amount) => {
     if (amount < 10 || amount > balance) {
@@ -226,43 +269,6 @@ function App() {
       bet: 10, // Reset to minimum bet
       bettingPhase: true,
     }));
-  };
-
-  // Get recommendation from the backend
-  const getRecommendation = async () => {
-    try {
-      // Extract card values (remove suits)
-      const playerCards = playerHand.map((card) => card.slice(0, -1)); // Remove suit
-      const dealerCard = dealerHand.slice(0, -1); // Remove suit
-
-      // Calculate the sum of the player's cards
-      const playerSum = calculateHandValue(playerHand);
-      // Calculate the sum of the dealer's visible card
-      const dealerSum = calculateHandValue([...dealerCard]);
-      const has_ace = "A" in playerCards;
-      // Send the data to the backend
-      const response = await fetch(
-        "https://blackjack-r5rb.onrender.com/recommend",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            player_sum: playerSum, // Sum of player's cards (e.g., 18)
-            dealer_sum: dealerSum, // Sum of dealer's visible card (e.g., 10)
-            has_ace: has_ace,
-          }),
-        }
-      );
-
-      // Parse the response
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error fetching recommendation:", error);
-      return null;
-    }
   };
 
   return (
