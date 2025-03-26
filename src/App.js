@@ -143,20 +143,23 @@ function App() {
         // Calculate the sum of the dealer's visible card
         const dealerSum = calculateHandValue([...dealerCard]);
         const has_ace = "A" in playerCards;
-        const can_double_down = playerHand.length == 2;
+        const can_double_down = playerHand.length === 2;
         // Send the data to the backend
-        const response = await fetch("http://localhost:5000/recommend", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            player_sum: playerSum, // Sum of player's cards (e.g., 18)
-            dealer_sum: dealerSum, // Sum of dealer's visible card (e.g., 10)
-            has_ace: has_ace,
-            can_double_down: can_double_down,
-          }),
-        });
+        const response = await fetch(
+          "https://blackjack-r5rb.onrender.com/recommend",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              player_sum: playerSum, // Sum of player's cards (e.g., 18)
+              dealer_sum: dealerSum, // Sum of dealer's visible card (e.g., 10)
+              has_ace: has_ace,
+              can_double_down: can_double_down,
+            }),
+          }
+        );
 
         // Parse the response
         const data = await response.json();

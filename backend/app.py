@@ -69,13 +69,11 @@ def simulate_blackjack(player_total, dealer_upcard,can_double_down, num_simulati
         """ Computes the probabilities and EV from simulation results. """
         wins = results.count(1)
         losses = results.count(-1)
-        pushes = results.count(0)
         total = len(results)
         win_prob = wins / total
         loss_prob = losses / total
-        push_prob = pushes / total
         ev = win_prob - loss_prob  # EV = Win% - Lose%
-        return win_prob, loss_prob, push_prob, ev
+        return ev
     
     def calculate_ev_double(results):
         """ Computes the probabilities and EV from simulation results. """
@@ -86,10 +84,6 @@ def simulate_blackjack(player_total, dealer_upcard,can_double_down, num_simulati
         pushes = results.count(0)
         total = len(results)
         
-        # Calculate effective win/loss probability accounting for double stakes
-        win_value = single_wins + (2 * double_wins)
-        loss_value = single_losses + (2 * double_losses)
-        
         win_prob = single_wins / total
         loss_prob = single_losses / total
         double_win_prob = double_wins / total
@@ -99,14 +93,14 @@ def simulate_blackjack(player_total, dealer_upcard,can_double_down, num_simulati
         # EV calculation accounting for double stakes
         ev = (win_prob + 2*double_win_prob) - (loss_prob + 2*double_loss_prob)
         
-        return win_prob + double_win_prob, loss_prob + double_loss_prob, push_prob, ev
+        return ev
 
-    stand_win, stand_loss, stand_push, ev_stand = calculate_ev(results["Stand"])
-    hit_win, hit_loss, hit_push, ev_hit = calculate_ev(results["Hit"])
+    ev_stand = calculate_ev(results["Stand"])
+    ev_hit = calculate_ev(results["Hit"])
     if can_double_down:
-        double_down_win, double_down_loss, double_down_push, ev_double_down = calculate_ev_double(results["DoubleDown"])
+        ev_double_down = calculate_ev_double(results["DoubleDown"])
     else:
-        double_down_win, double_down_loss, double_down_push, ev_double_down = 0, 0, 0, float('-inf')  # If not allowed, set EV to a very low value
+        ev_double_down = 0, 0, 0, float('-inf')  # If not allowed, set EV to a very low value
 
 
     return ev_stand, ev_hit,ev_double_down
@@ -114,7 +108,9 @@ def simulate_blackjack(player_total, dealer_upcard,can_double_down, num_simulati
 def compute_nash_equilibrium(ev_stand, ev_hit,ev_double_down,can_double_down):
     """ Compute Nash Equilibrium for the player's Hit/Stand decision. """
     
-    max_ev = max(ev_stand, ev_hit, ev_double_down)
+    max_ev = max(ev_stand, ev_hit)
+    if(can_double_down):
+        max_ev = max(ev_stand, ev_hit, ev_double_down)
     if max_ev > 0:
         ev_stand /= max_ev
         ev_hit /= max_ev
