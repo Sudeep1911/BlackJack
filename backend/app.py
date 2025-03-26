@@ -8,63 +8,6 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 deck = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11]
 
-
-def simulate_dealer(dealer_total):
-    """Simulates dealer's play and returns probability distribution of final outcomes"""
-    outcomes = {}
-
-    def dealer_play(hand):
-        card_values = {'J': 10, 'Q': 10, 'K': 10, 'A': 11}  # Adjust Ace handling separately
-
-        hand = [card_values[card] if card in card_values else int(card) for card in hand]
-        total = sum(hand)
-
-        soft_ace_count = hand.count(11)
-
-        # Adjust for aces if over 21
-        while total > 21 and soft_ace_count:
-            total -= 10
-            soft_ace_count -= 1
-
-        # Dealer stands at 17+
-        if total >= 17:
-            outcomes[total] = outcomes.get(total, 0) + 1
-            return
-
-        # Draw next card
-        for card in deck:
-            dealer_play(hand + [card])
-
-    dealer_play([dealer_total])
-
-    # Convert to probability distribution
-    total_sims = sum(outcomes.values())
-    return {k: v / total_sims for k, v in outcomes.items()}
-
-# Compute EV if the player stands
-def ev_stand(player_total, dealer_card):
-    dealer_outcomes = simulate_dealer(dealer_card)
-
-    ev = sum(
-        prob * (1 if player_total > dealer_total else -1 if player_total < dealer_total else 0)
-        for dealer_total, prob in dealer_outcomes.items()
-    )
-    return ev
-
-# Compute EV if the player hits
-def ev_hit(player_total, dealer_card):
-    ev = 0
-    for new_card in deck:
-        new_total = player_total + new_card
-
-        if new_total > 21:
-            ev += -1 / len(deck)  # Bust → immediate loss
-        else:
-            ev += ev_stand(new_total, dealer_card) / len(deck)
-
-    return ev
-
-
 # Create game theory models for different blackjack scenarios
 def simulate_blackjack(player_total, dealer_upcard, num_simulations=100000):
     """ Simulates blackjack hands to generate the payoff matrix. """
@@ -109,16 +52,14 @@ def simulate_blackjack(player_total, dealer_upcard, num_simulations=100000):
         """ Computes the probabilities and EV from simulation results. """
         wins = results.count(1)
         losses = results.count(-1)
-        pushes = results.count(0)
         total = len(results)
         win_prob = wins / total
         loss_prob = losses / total
-        push_prob = pushes / total
         ev = win_prob - loss_prob  # EV = Win% - Lose%
-        return win_prob, loss_prob, push_prob, ev
+        return ev
 
-    stand_win, stand_loss, stand_push, ev_stand = calculate_ev(results["Stand"])
-    hit_win, hit_loss, hit_push, ev_hit = calculate_ev(results["Hit"])
+    ev_stand = calculate_ev(results["Stand"])
+    ev_hit = calculate_ev(results["Hit"])
 
     return ev_stand, ev_hit
 
