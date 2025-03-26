@@ -143,6 +143,7 @@ function App() {
         // Calculate the sum of the dealer's visible card
         const dealerSum = calculateHandValue([...dealerCard]);
         const has_ace = "A" in playerCards;
+        const can_double_down = playerHand.length === 2;
         // Send the data to the backend
         const response = await fetch(
           "https://blackjack-r5rb.onrender.com/recommend",
@@ -155,6 +156,7 @@ function App() {
               player_sum: playerSum, // Sum of player's cards (e.g., 18)
               dealer_sum: dealerSum, // Sum of dealer's visible card (e.g., 10)
               has_ace: has_ace,
+              can_double_down: can_double_down,
             }),
           }
         );
@@ -243,6 +245,21 @@ function App() {
     }
   };
 
+  const handleDoubleDown = () => {
+    setRecommendation(null);
+    if (gameOver) return;
+    setGameState((prevState) => ({
+      ...prevState,
+      bet: bet * 2,
+    }));
+    const newPlayerHand = [...playerHand, drawCard(gameState.deck)];
+    setGameState((prevState) => ({
+      ...prevState,
+      playerHand: newPlayerHand,
+    }));
+    handleStand();
+  };
+
   // Handle bet placement
   const placeBet = (amount) => {
     if (amount < 10 || amount > balance) {
@@ -258,6 +275,7 @@ function App() {
 
   // Reset the game
   const resetGame = () => {
+    setRecommendation(null);
     setGameState((prevState) => ({
       ...prevState,
       playerHand: [],
@@ -341,37 +359,55 @@ function App() {
 
               {/* Action Buttons with Floating Notification */}
               <div className="buttons">
-                <div className="button-container">
-                  {recommendation?.mixed.recommendation === "Hit" && (
-                    <div className="notification">Take this move!</div>
-                  )}
-                  <button
-                    onClick={handleHit}
-                    disabled={gameOver}
-                    className={
-                      recommendation?.mixed.recommendation === "Hit"
-                        ? "blinking"
-                        : ""
-                    }
-                  >
-                    Hit
-                  </button>
-                </div>
-                <div className="button-container">
-                  {recommendation?.mixed.recommendation === "Stand" && (
-                    <div className="notification">Take this move!</div>
-                  )}
-                  <button
-                    onClick={handleStand}
-                    disabled={gameOver}
-                    className={
-                      recommendation?.mixed.recommendation === "Stand"
-                        ? "blinking"
-                        : ""
-                    }
-                  >
-                    Stand
-                  </button>
+                <div className="strategies">
+                  <div className="button-container">
+                    {recommendation?.mixed.recommendation === "Hit" && (
+                      <div className="notification">Take this move!</div>
+                    )}
+                    <button
+                      onClick={handleHit}
+                      disabled={gameOver}
+                      className={
+                        recommendation?.mixed.recommendation === "Hit"
+                          ? "blinking"
+                          : ""
+                      }
+                    >
+                      Hit
+                    </button>
+                  </div>
+                  <div className="button-container">
+                    {recommendation?.mixed.recommendation === "Stand" && (
+                      <div className="notification">Take this move!</div>
+                    )}
+                    <button
+                      onClick={handleStand}
+                      disabled={gameOver}
+                      className={
+                        recommendation?.mixed.recommendation === "Stand"
+                          ? "blinking"
+                          : ""
+                      }
+                    >
+                      Stand
+                    </button>
+                  </div>
+                  <div className="button-container">
+                    {recommendation?.mixed.recommendation === "Double Down" && (
+                      <div className="notification">Take this move!</div>
+                    )}
+                    <button
+                      onClick={handleDoubleDown}
+                      disabled={gameOver || playerHand.length > 2}
+                      className={
+                        recommendation?.mixed.recommendation === "Double Down"
+                          ? "blinking"
+                          : ""
+                      }
+                    >
+                      Double Down
+                    </button>
+                  </div>
                 </div>
                 <button onClick={resetGame}>New Game</button>
               </div>
